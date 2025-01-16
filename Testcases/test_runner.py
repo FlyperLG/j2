@@ -25,14 +25,14 @@ def test_design_runner(module_name):
     sim = os.getenv("SIM", "icarus")
 
     sources = [J1_FILE, STACK_FILE]
-
     header_files = [PROJECT_ROOT]
 
     runner = get_runner(sim)
     runner.build(
         sources=sources,
         hdl_toplevel="j1",
-        includes=header_files
+        includes=header_files,
+        waves=True
     )
 
     runner.test(hdl_toplevel="j1", test_dir=TEST_ROOT, test_module=module_name)
