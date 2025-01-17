@@ -38,361 +38,360 @@ async def generate_clock(dut):
         dut.clock.value = 1
         await Timer(1)
 
+# @cocotb.test()
+# async def testcase_template(dut):
+#     """Test DESCRIPTION"""
+#     await cocotb.start(generate_clock(dut))  # Generate clock
+
+#     # Initalize TESTCASE
+#     dut.active_low_reset.value = 0
+#     await RisingEdge(dut.clock)
+#     await FallingEdge(dut.clock)
+
+#     # Check SOMETHING
+#     assert dut.active_low_reset.value == 0, f"Expected TESTVAR to be 0, got {dut.active_low_reset.value}"
+#     dut._log.info("my_signal_1 is %s", dut.active_low_reset.value)
+
 @cocotb.test()
-async def testcase_template(dut):
-    """Test DESCRIPTION"""
+async def testcase_alu_basic(dut):
+    """Test basic ALU T & N Operation"""
     await cocotb.start(generate_clock(dut))  # Generate clock
 
-    # Initalize TESTCASE
-    dut.active_low_reset.value = 0
+    dut.instruction.value = INSN["TOP"]
+    dut.data_stack_top.value = 5
+    await RisingEdge(dut.clock)  # Trigger Operation
+    await FallingEdge(dut.clock)  # Any Await would work -> data_stack_top = st0N wird NACH RisingEdge zugewiesen
+    assert dut.data_stack_top.value == 5, f"Expected data_stack_top to still be 5 aftere T, got {dut.data_stack_top.value}"
+
+    dut.instruction.value = INSN["SEC"]
+    dut.data_stack_second.value = 10
+    await RisingEdge(dut.clock) 
+    await FallingEdge(dut.clock)  
+    assert dut.data_stack_top.value == 10, f"Expected data_stack_top to be 10 after N, got {dut.data_stack_top.value}"
+
+@cocotb.test()
+async def testcase_alu_add(dut):
+    """Test ADD ALU Operation"""
+    await cocotb.start(generate_clock(dut))
+
+    dut.instruction.value = INSN["ADD"]
+    dut.data_stack_top.value = 5
+    dut.data_stack_second.value = 3
+    await RisingEdge(dut.clock) 
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 8, f"Expected data_stack_top to be 8 after ADD, got {dut.data_stack_top.value}"
+
+
+@cocotb.test()
+async def testcase_alu_and(dut):
+    """Test AND ALU Operation"""
+    await cocotb.start(generate_clock(dut)) 
+
+    dut.instruction.value = INSN["AND"]
+    dut.data_stack_top.value = 0b1101
+    dut.data_stack_second.value = 0b1011
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 0b1001, f"Expected data_stack_top to be 0b1001 after AND, got {dut.data_stack_top.value}"
+
+
+@cocotb.test()
+async def testcase_alu_or(dut):
+    """Test OR ALU Operation"""
+    await cocotb.start(generate_clock(dut)) 
+
+    dut.instruction.value = INSN["OR"]
+    dut.data_stack_top.value = 0b1101
+    dut.data_stack_second.value = 0b1011
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 0b1111, f"Expected data_stack_top to be 0b1111 after OR, got {dut.data_stack_top.value}"
+
+
+@cocotb.test()
+async def testcase_alu_xor(dut):
+    """Test XOR ALU Operation"""
+    await cocotb.start(generate_clock(dut)) 
+
+    dut.instruction.value = INSN["XOR"]
+    dut.data_stack_top.value = 0b1101
+    dut.data_stack_second.value = 0b1011
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 0b0110, f"Expected data_stack_top to be 0b0110 after XOR, got {dut.data_stack_top.value}"
+
+
+@cocotb.test()
+async def testcase_alu_invert(dut):
+    """Test Invert ALU Operation"""
+    await cocotb.start(generate_clock(dut)) 
+
+    dut.instruction.value = INSN["INVERT"]
+    dut.data_stack_top.value = 0b1101
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    # Size of data_stack_top has to be acounted for
+    assert dut.data_stack_top.value == 0b11111111111111111111111111110010, f"Expected data_stack_top to be 11111111111111111111111111110010 after Invert, got {dut.data_stack_top.value}"
+
+
+@cocotb.test()
+async def testcase_alu_equal(dut):
+    """Test equal ALU Operation"""
+    await cocotb.start(generate_clock(dut)) 
+
+    dut.instruction.value = INSN["EQUAL"]
+    dut.data_stack_top.value = 5
+    dut.data_stack_second.value = 5
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value != 0, f"Expected data_stack_top to not be 0 after equal, got {dut.data_stack_top.value}"
+
+
+@cocotb.test()
+async def testcase_alu_smaller_signed(dut):
+    """Test smaller signed ALU Operation"""
+    await cocotb.start(generate_clock(dut))  
+
+    dut.instruction.value = INSN["SMALLER_SIGNED"]
+    dut.data_stack_top.value = 5
+    dut.data_stack_second.value = -5
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value != 0, f"Expected data_stack_top to not be 0 after smaller signed, got {dut.data_stack_top.value}"
+
+@cocotb.test()
+async def testcase_alu_shift(dut):
+    """Test rshift & lshift ALU Operation"""
+    await cocotb.start(generate_clock(dut))  
+
+    dut.instruction.value = INSN["RSHIFT"]
+    dut.data_stack_top.value = 1
+    dut.data_stack_second.value = 2
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 1, f"Expected data_stack_top to be 1 after rshift, got {dut.data_stack_top.value}"
+
+    dut.instruction.value = INSN["LSHIFT"]
+    dut.data_stack_top.value = 1
+    dut.data_stack_second.value = 2
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 4, f"Expected data_stack_top to be 4 after lshift, got {dut.data_stack_top.value}"
+
+@cocotb.test()
+async def testcase_alu_return(dut):
+    """Test return ALU Operation"""
+    await cocotb.start(generate_clock(dut))  
+
+    # Fill return stack
+    dut.return_stack_write_enable.value = 1
+    dut.return_stack_pointer_top.value = 0
+    dut.instruction.value = 0b0110000000100100
+    dut.data_stack_top.value = 73
+    await RisingEdge(dut.clock)
+
+    # Set data_stack_top to something else
+    dut.return_stack_write_enable.value = 0
+    dut.instruction.value = INSN["TOP"]
+    dut.data_stack_top.value = 100
+    await RisingEdge(dut.clock)
+
+    # Check return stack
+    dut.instruction.value = INSN["RETURN"]
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 73, f"Expected data_stack_top to be 73 after return, got {dut.data_stack_top.value}"
+
+@cocotb.test()
+async def testcase_alu_mem_din(dut):
+    """Test memory din ALU Operation"""
+    await cocotb.start(generate_clock(dut))  
+
+    dut.instruction.value = INSN["MEM_DIN"]
+    dut.memory_data_in.value = 9
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 9, f"Expected data_stack_top to be 9 after memory data in, got {dut.data_stack_top.value}"
+
+@cocotb.test()
+async def testcase_alu_io_din(dut):
+    """Test io din ALU Operation"""
+    await cocotb.start(generate_clock(dut))  
+
+    dut.instruction.value = INSN["IO_DIN"]
+    dut.io_data_in.value = 66
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 66, f"Expected data_stack_top to be 66 after i/o data in, got {dut.data_stack_top.value}"
+
+@cocotb.test()
+async def testcase_alu_depth(dut):
+    """Test depth ALU Operation"""
+    await cocotb.start(generate_clock(dut))  
+
+    dut.data_stack_write_enable.value = 1
+    dut.data_stack_pointer_top.value = 0
+    dut.data_stack_top.value = 49
+    dut.instruction.value = 0b0110000000010001
+
+    await RisingEdge(dut.clock)
+    await RisingEdge(dut.clock)
     await RisingEdge(dut.clock)
     await FallingEdge(dut.clock)
 
-    # Check SOMETHING
-    assert dut.active_low_reset.value == 0, f"Expected TESTVAR to be 0, got {dut.resetq.value}"
-    dut._log.info("my_signal_1 is %s", dut.active_low_reset.value)
-
-# @cocotb.test()
-# async def testcase_alu_basic(dut):
-#     """Test basic ALU T & N Operation"""
-#     await cocotb.start(generate_clock(dut))  # Generate clock
-
-#     dut.insn.value = INSN["TOP"]
-#     dut.st0.value = 5
-#     await RisingEdge(dut.clock)  # Trigger Operation
-#     await FallingEdge(dut.clock)  # Any Await would work -> st0 = st0N wird NACH RisingEdge zugewiesen
-#     assert dut.st0.value == 5, f"Expected st0 to still be 5 aftere T, got {dut.st0.value}"
-
-#     dut.insn.value = INSN["SEC"]
-#     dut.st1.value = 10
-#     await RisingEdge(dut.clock) 
-#     await FallingEdge(dut.clock)  
-#     assert dut.st0.value == 10, f"Expected st0 to be 10 after N, got {dut.st0.value}"
-
-# @cocotb.test()
-# async def testcase_alu_add(dut):
-#     """Test ADD ALU Operation"""
-#     await cocotb.start(generate_clock(dut))
-
-#     dut.insn.value = INSN["ADD"]
-#     dut.st0.value = 5
-#     dut.st1.value = 3
-#     await RisingEdge(dut.clock) 
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 8, f"Expected st0 to be 8 after ADD, got {dut.st0.value}"
-
-
-# @cocotb.test()
-# async def testcase_alu_and(dut):
-#     """Test AND ALU Operation"""
-#     await cocotb.start(generate_clock(dut)) 
-
-#     dut.insn.value = INSN["AND"]
-#     dut.st0.value = 0b1101
-#     dut.st1.value = 0b1011
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 0b1001, f"Expected st0 to be 0b1001 after AND, got {dut.st0.value}"
-
-
-# @cocotb.test()
-# async def testcase_alu_or(dut):
-#     """Test OR ALU Operation"""
-#     await cocotb.start(generate_clock(dut)) 
-
-#     dut.insn.value = INSN["OR"]
-#     dut.st0.value = 0b1101
-#     dut.st1.value = 0b1011
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 0b1111, f"Expected st0 to be 0b1111 after OR, got {dut.st0.value}"
-
-
-# @cocotb.test()
-# async def testcase_alu_xor(dut):
-#     """Test XOR ALU Operation"""
-#     await cocotb.start(generate_clock(dut)) 
-
-#     dut.insn.value = INSN["XOR"]
-#     dut.st0.value = 0b1101
-#     dut.st1.value = 0b1011
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 0b0110, f"Expected st0 to be 0b0110 after XOR, got {dut.st0.value}"
-
-
-# @cocotb.test()
-# async def testcase_alu_invert(dut):
-#     """Test Invert ALU Operation"""
-#     await cocotb.start(generate_clock(dut)) 
-
-#     dut.insn.value = INSN["INVERT"]
-#     dut.st0.value = 0b1101
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     # Size of st0 has to be acounted for
-#     assert dut.st0.value == 0b11111111111111111111111111110010, f"Expected st0 to be 11111111111111111111111111110010 after Invert, got {dut.st0.value}"
-
-
-# @cocotb.test()
-# async def testcase_alu_equal(dut):
-#     """Test equal ALU Operation"""
-#     await cocotb.start(generate_clock(dut)) 
-
-#     dut.insn.value = INSN["EQUAL"]
-#     dut.st0.value = 5
-#     dut.st1.value = 5
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value != 0, f"Expected st0 to not be 0 after equal, got {dut.st0.value}"
-
-
-# @cocotb.test()
-# async def testcase_alu_smaller_signed(dut):
-#     """Test smaller signed ALU Operation"""
-#     await cocotb.start(generate_clock(dut))  
-
-#     dut.insn.value = INSN["SMALLER_SIGNED"]
-#     dut.st0.value = 5
-#     dut.st1.value = -5
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value != 0, f"Expected st0 to not be 0 after smaller signed, got {dut.st0.value}"
-
-# @cocotb.test()
-# async def testcase_alu_shift(dut):
-#     """Test rshift & lshift ALU Operation"""
-#     await cocotb.start(generate_clock(dut))  
-
-#     dut.insn.value = INSN["RSHIFT"]
-#     dut.st0.value = 1
-#     dut.st1.value = 2
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 1, f"Expected st0 to be 1 after rshift, got {dut.st0.value}"
-
-#     dut.insn.value = INSN["LSHIFT"]
-#     dut.st0.value = 1
-#     dut.st1.value = 2
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 4, f"Expected st0 to be 4 after lshift, got {dut.st0.value}"
-
-# @cocotb.test()
-# async def testcase_alu_return(dut):
-#     """Test return ALU Operation"""
-#     await cocotb.start(generate_clock(dut))  
-
-#     # Fill return stack
-#     dut.rstkW.value = 1
-#     dut.rsp.value = 0
-#     dut.insn.value = 0b0110000000100100
-#     dut.st0.value = 73
-#     await RisingEdge(dut.clock)
-
-#     # Set st0 to something else
-#     dut.rstkW.value = 0
-#     dut.insn.value = INSN["TOP"]
-#     dut.st0.value = 100
-#     await RisingEdge(dut.clock)
-
-#     # Check return stack
-#     dut.insn.value = INSN["RETURN"]
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 73, f"Expected st0 to be 73 after return, got {dut.st0.value}"
-
-# @cocotb.test()
-# async def testcase_alu_mem_din(dut):
-#     """Test memory din ALU Operation"""
-#     await cocotb.start(generate_clock(dut))  
-
-#     dut.insn.value = INSN["MEM_DIN"]
-#     dut.mem_din.value = 9
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 9, f"Expected st0 to be 9 after memory data in, got {dut.st0.value}"
-
-# @cocotb.test()
-# async def testcase_alu_io_din(dut):
-#     """Test io din ALU Operation"""
-#     await cocotb.start(generate_clock(dut))  
-
-#     dut.insn.value = INSN["IO_DIN"]
-#     dut.io_din.value = 66
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 66, f"Expected st0 to be 66 after i/o data in, got {dut.st0.value}"
-
-# @cocotb.test()
-# async def testcase_alu_depth(dut):
-#     """Test depth ALU Operation"""
-#     await cocotb.start(generate_clock(dut))  
-
-#     dut.dstkW.value = 1
-#     dut.dsp.value = 0
-#     dut.st0.value = 49
-#     dut.insn.value = 0b0110000000010001
-
-#     await RisingEdge(dut.clock)
-#     await RisingEdge(dut.clock)
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-
-#     dut.dstkW.value = 0
-#     dut.rstkW.value = 1
-#     dut.rsp.value = 0
-#     dut.insn.value = 0b0110000000100100
-
-#     await RisingEdge(dut.clock)
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-
-#     dut.insn.value = INSN["DEPTH"]
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 35, f"Expected st0 to be 17 after depth, got {dut.st0.value}"
-
-# @cocotb.test()
-# async def testcase_alu_smaller(dut):
-#     """Test smaller ALU Operation"""
-#     await cocotb.start(generate_clock(dut))  
-
-#     dut.insn.value = INSN["SMALLER"]
-#     dut.st0.value = 5
-#     dut.st1.value = 5
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.st0.value == 0, f"Expected st0 to be 0 after smaller, got {dut.st0.value}"
-
-# @cocotb.test()
-# async def testcase_jump(dut):
-#     """Test jump operation"""
-#     await cocotb.start(generate_clock(dut)) 
-
-#     dut.insn.value = INSN["JUMP"]
-#     dut.st0.value = 0
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.pc.value == 16, f"Expected pc to jump to 16, got {dut.pc.value}"
-
-# @cocotb.test()
-# async def testcase_call(dut):
-#     """Test call operation"""
-#     await cocotb.start(generate_clock(dut)) 
-
-#     dut.insn.value = INSN["CALL"]
-#     dut.st0.value = 0
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.pc.value == 32, f"Expected pc to call to 32, got {dut.pc.value}"
-
-# @cocotb.test()
-# async def testcase_cond_jump(dut):
-#     """Test conditional jump"""
-#     await cocotb.start(generate_clock(dut)) 
-
-#     dut.insn.value = INSN["COND_JUMP"]
-#     dut.st1.value = 0
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.pc.value == 64, f"Expected pc to jump to 64, got {dut.pc.value}"
-
-# @cocotb.test()
-# async def testcase_no_insn(dut):
-#     """Test no valid instruction"""
-#     await cocotb.start(generate_clock(dut))  
-
-#     dut.insn.value = INSN["NO_INSN"]
-#     dut.dstkW.value = 0
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     xes = ("x" * 32)
-#     assert dut.st0.value == xes, f"Expected st0 to be x after invalid instruction, got {dut.st0.value}"
-
-# @cocotb.test()
-# async def testcase_data_stack(dut):
-#     """Test Data Stack"""
-#     await cocotb.start(generate_clock(dut))
-
-#     dut.dstkW.value = 1
-#     dut.dsp.value = 0
-#     dut.st0.value = 49
-#     dut.insn.value = 0b0110000000010001
-
-#     await RisingEdge(dut.clock)
-#     await RisingEdge(dut.clock)
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-
-#     assert dut.dsp.value == 3, f"Expected dsp to be 3, got {dut.dsp.value}"
-#     assert dut.st1.value == 49, f"Expected st1 to be 49, got {dut.st1.value}"
-
-# @cocotb.test()
-# async def testcase_return_stack(dut):
-#     """Test Return Stack"""
-#     await cocotb.start(generate_clock(dut))
-
-#     dut.rstkW.value = 1
-#     dut.rsp.value = 0
-#     dut.insn.value = 0b0110000000100100
-
-#     await RisingEdge(dut.clock)
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-
-#     assert dut.rsp.value == 2, f"Expected rsp to be 2, got {dut.resetq.value}"
-
-# @cocotb.test()
-# async def testcase_mem_write(dut):
-#     """Test Memory Write"""
-#     await cocotb.start(generate_clock(dut))
-
-#     dut.insn.value = INSN["ADD_TO_MEM"]
-#     dut.st0.value = 10
-#     dut.st1.value = 30
-
-#     await RisingEdge(dut.clock)
-
-#     assert dut.st1.value == 30, f"Expected st0 to be 40 got {dut.st0.value}"
-#     assert dut.dout.value == 30, f"Expected dout to be 40 got {dut.dout.value}"
-#     assert dut.mem_wr.value != 0, f"Expected mem_wr not be 0 got {dut.mem_wr.value}"
-#     assert dut.mem_addr.value == 40, f"Expected dout to be mem_addr to be 130 got {dut.mem_addr.value}"
-
-# @cocotb.test()
-# async def testcase_io_write(dut):
-#     """Test IO Write"""
-#     await cocotb.start(generate_clock(dut))
-
-#     dut.insn.value = INSN["ADD_TO_IO"]
-#     dut.st0.value = 20
-#     dut.st1.value = 60
-
-#     await RisingEdge(dut.clock)
-
-#     assert dut.dout.value == 60, f"Expected dout to be 60, got {dut.dout.value}"
-#     assert dut.io_wr.value != 0, f"Expected io_wr not be 0 , got {dut.mem_wr.value}"
-#     Probably not needed in io
-#     assert dut.mem_addr.value == 80, f"Expected mem_addr to be 140, got {dut.mem_addr.value}"
-
-# @cocotb.test()
-# async def test_reset(dut):
-#     """Test Reset"""
-#     await cocotb.start(generate_clock(dut))  # Generate clock
-
-#     # Apply reset
-#     dut.resetq.value = 0
-#     await RisingEdge(dut.clock)
-
-#     # Check if all registers are zeroed out
-#     assert dut.pc.value == 0, f"Expected pc to be 0, got {dut.pc.value}"
-#     assert dut.dsp.value == 0, f"Expected dsp to be 0, got {dut.dsp.value}"
-#     assert dut.st0.value == 0, f"Expected st0 to be 0, got {dut.st0.value}"
-#     assert dut.rsp.value == 0, f"Expected rsp to be 0, got {dut.rsp.value}"
-
-#     # De-assert reset and check if the values change to next
-#     dut.pcN.value = 10
-#     dut.resetq.value = 1
-#     await RisingEdge(dut.clock)
-#     await FallingEdge(dut.clock)
-#     assert dut.pc.value == 10, f"Expected pc to be 10 after reset deassertion, got {dut.pc.value}"
+    dut.data_stack_write_enable.value = 0
+    dut.return_stack_write_enable.value = 1
+    dut.return_stack_pointer_top.value = 0
+    dut.instruction.value = 0b0110000000100100
+
+    await RisingEdge(dut.clock)
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+
+    dut.instruction.value = INSN["DEPTH"]
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 35, f"Expected data_stack_top to be 35 after depth, got {dut.data_stack_top.value}"
+
+@cocotb.test()
+async def testcase_alu_smaller(dut):
+    """Test smaller ALU Operation"""
+    await cocotb.start(generate_clock(dut))  
+
+    dut.instruction.value = INSN["SMALLER"]
+    dut.data_stack_top.value = 5
+    dut.data_stack_second.value = 5
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.data_stack_top.value == 0, f"Expected data_stack_top to be 0 after smaller, got {dut.data_stack_top.value}"
+
+@cocotb.test()
+async def testcase_jump(dut):
+    """Test jump operation"""
+    await cocotb.start(generate_clock(dut)) 
+
+    dut.instruction.value = INSN["JUMP"]
+    dut.data_stack_top.value = 0
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.program_counter.value == 16, f"Expected program_counter to jump to 16, got {dut.program_counter.value}"
+
+@cocotb.test()
+async def testcase_call(dut):
+    """Test call operation"""
+    await cocotb.start(generate_clock(dut)) 
+
+    dut.instruction.value = INSN["CALL"]
+    dut.data_stack_top.value = 0
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.program_counter.value == 32, f"Expected program_counter to call to 32, got {dut.program_counter.value}"
+
+@cocotb.test()
+async def testcase_cond_jump(dut):
+    """Test conditional jump"""
+    await cocotb.start(generate_clock(dut)) 
+
+    dut.instruction.value = INSN["COND_JUMP"]
+    dut.data_stack_second.value = 0
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.program_counter.value == 64, f"Expected program_counter to jump to 64, got {dut.program_counter.value}"
+
+@cocotb.test()
+async def testcase_no_insn(dut):
+    """Test no valid instruction"""
+    await cocotb.start(generate_clock(dut))  
+
+    dut.instruction.value = INSN["NO_INSN"]
+    dut.data_stack_write_enable.value = 0
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    xes = ("x" * 32)
+    assert dut.data_stack_top.value == xes, f"Expected data_stack_top to be x after invalid instruction, got {dut.data_stack_top.value}"
+
+@cocotb.test()
+async def testcase_data_stack(dut):
+    """Test Data Stack"""
+    await cocotb.start(generate_clock(dut))
+
+    dut.data_stack_write_enable.value = 1
+    dut.data_stack_pointer_top.value = 0
+    dut.data_stack_top.value = 49
+    dut.instruction.value = 0b0110000000010001
+
+    await RisingEdge(dut.clock)
+    await RisingEdge(dut.clock)
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+
+    assert dut.data_stack_pointer_top.value == 3, f"Expected data_stack_pointer_top to be 3, got {dut.data_stack_pointer_top.value}"
+    assert dut.data_stack_second.value == 49, f"Expected data_stack_second to be 49, got {dut.data_stack_second.value}"
+
+@cocotb.test()
+async def testcase_return_stack(dut):
+    """Test Return Stack"""
+    await cocotb.start(generate_clock(dut))
+
+    dut.return_stack_write_enable.value = 1
+    dut.return_stack_pointer_top.value = 0
+    dut.instruction.value = 0b0110000000100100
+
+    await RisingEdge(dut.clock)
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+
+    assert dut.return_stack_pointer_top.value == 2, f"Expected return_stack_pointer_top to be 2, got {dut.active_low_reset.value}"
+
+@cocotb.test()
+async def testcase_mem_write(dut):
+    """Test Memory Write"""
+    await cocotb.start(generate_clock(dut))
+
+    dut.instruction.value = INSN["ADD_TO_MEM"]
+    dut.data_stack_top.value = 10
+    dut.data_stack_second.value = 30
+
+    await RisingEdge(dut.clock)
+
+    assert dut.data_stack_second.value == 30, f"Expected data_stack_top to be 40 got {dut.data_stack_top.value}"
+    assert dut.data_out.value == 30, f"Expected data_out to be 40 got {dut.data_out.value}"
+    assert dut.memory_write_enable.value != 0, f"Expected memory_write_enable not be 0 got {dut.memory_write_enable.value}"
+    assert dut.memory_address.value == 40, f"Expected data_out to be memory_address to be 130 got {dut.memory_address.value}"
+
+@cocotb.test()
+async def testcase_io_write(dut):
+    """Test IO Write"""
+    await cocotb.start(generate_clock(dut))
+
+    dut.instruction.value = INSN["ADD_TO_IO"]
+    dut.data_stack_top.value = 20
+    dut.data_stack_second.value = 60
+
+    await RisingEdge(dut.clock)
+
+    assert dut.data_out.value == 60, f"Expected data_out to be 60, got {dut.data_out.value}"
+    assert dut.io_write_enable.value != 0, f"Expected io_write_enable not be 0 , got {dut.memory_write_enable.value}"
+    assert dut.memory_address.value == 80, f"Expected memory_address to be 140, got {dut.memory_address.value}"
+
+@cocotb.test()
+async def test_reset(dut):
+    """Test Reset"""
+    await cocotb.start(generate_clock(dut))  # Generate clock
+
+    # Apply reset
+    dut.active_low_reset.value = 0
+    await RisingEdge(dut.clock)
+
+    # Check if all registers are zeroed out
+    assert dut.program_counter.value == 0, f"Expected program_counter to be 0, got {dut.program_counter.value}"
+    assert dut.data_stack_pointer_top.value == 0, f"Expected data_stack_pointer_top to be 0, got {dut.data_stack_pointer_top.value}"
+    assert dut.data_stack_top.value == 0, f"Expected data_stack_top to be 0, got {dut.data_stack_top.value}"
+    assert dut.return_stack_pointer_top.value == 0, f"Expected return_stack_pointer_top to be 0, got {dut.return_stack_pointer_top.value}"
+
+    # De-assert reset and check if the values change to next
+    dut.program_counter_next.value = 10
+    dut.active_low_reset.value = 1
+    await RisingEdge(dut.clock)
+    await FallingEdge(dut.clock)
+    assert dut.program_counter.value == 10, f"Expected program_counter to be 10 after reset deassertion, got {dut.program_counter.value}"
