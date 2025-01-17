@@ -1,6 +1,6 @@
 `include "common.h"
 
-module j1(
+module j2(
     input wire clock,
     input wire active_low_reset,
 
@@ -18,7 +18,6 @@ module j1(
 reg is_reboot = 1;
 
 reg [12:0] program_counter, program_counter_next;
-wire [12:0] program_counter_incremented = program_counter + 1;
 assign instruction_address = {program_counter_next};
 
 // Data & return stacks
@@ -56,15 +55,44 @@ stack #(.DEPTH(`DEPTH)) return_stack (
 assign memory_address = data_stack_top_next[15:0];
 reg [`WIDTH-1:0] data_stack_top_next;
 alu alu1 (
-    .instruction(instruction)
-    .data_stack_current_top(data_stack_next_value)
-    .data_stack_current_next_top(data_stack_top)
-    .return_stack_current_top(return_stack_top_value)
-    .memory_data_in(memory_data_in)
-    .io_data_in(io_data_in)
+    // Input
+    .instruction(instruction),
+
+    .data_stack_read_position(data_stack_pointer),
+    .data_stack_current_top(data_stack_current_top),
+    .data_stack_current_next_top(data_stack_current_top_next),
+
+    .return_stack_read_position(return_stack_pointer),
+    .return_stack_current_top(return_stack_top_value),
+
+    .memory_data_in(memory_data_in),
+    .io_data_in(io_data_in),
+    .reboot(is_reboot),
+
+
+    // Output
+    .program_counter_next_value(program_counter_next),
     // ask if this works fine since the data_stack_top_next is assignt to memory_address
-    .data_stack_next_value(data_stack_top_next)
+    .data_stack_next_value(data_stack_top_next),
+    .data_stack_next_write_position(data_stack_pointer_next),
+    .data_stack_next_write(data_stack_write_enable),
+    
+    .return_stack_next_write_position(return_stack_pointer_next),
+    .return_stack_next_write(return_stack_write_enable)
+
+    .function_io_write(io_write_enable)
+    .function_memory_write(memory_write_enable)
 );
+
+always @(negedge active_low_reset or posedge clock) begin
+    if(!active_low_reset) begin
+        is_reboot <= 1'b1;
+        { program_counter, data_stack_pointer, data_stack_current_top, return_stack_pointer } <= 0;
+    end else begin
+        is_reboot <= 0;
+        { program_counter, data_stack_pointer, data_stack_current_top, return_stack_pointer } <= { program_counter_next, data_stack_pointer_next, data_stack_current_top_next, return_stack_pointer_next }
+    end
+end
 
 // Instruction Decoding & ALU operations
 //always @* begin
