@@ -7,11 +7,12 @@ from cocotb.runner import get_runner
 TEST_ROOT = Path(__file__).resolve().parent
 SIM_BUILD_DIR = TEST_ROOT.joinpath("sim_build")
 PROJECT_ROOT = TEST_ROOT.parent
-J1_FILE = PROJECT_ROOT.joinpath("j1.v")
+J2_FILE = PROJECT_ROOT.joinpath("j2.v")
 STACK_FILE = PROJECT_ROOT.joinpath("stack.v")
-DEFAULT_TESTCASE_FILENAME = "test_j1"
-DEFAUTL_HDL_TOPLEVEL = "j1"
-DEFAULT_SOURCES = [J1_FILE, STACK_FILE]
+ALU_FILE = PROJECT_ROOT.joinpath("alu.v")
+DEFAULT_TESTCASE_FILENAME = "test_j2"
+DEFAUTL_HDL_TOPLEVEL = "j2"
+DEFAULT_SOURCES = [J2_FILE, STACK_FILE, ALU_FILE]
 
 class bcolors:
     HEADER = '\033[95m'
