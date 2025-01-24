@@ -71,8 +71,8 @@ module alu (
     assign data_out = data_stack_second;
 
     // Probably all need `DEPTH-1 instead of 2
-    reg [3:0] data_stack_position_incrementer;
-    reg [3:0] return_stack_position_incrementer;
+    reg [`DEPTH:0] data_stack_position_incrementer;
+    reg [`DEPTH:0] return_stack_position_incrementer;
     reg [12:0] program_counter_incremented = program_counter + 1;
 
     assign return_stack_second = (instruction[13] == 1'b0) ? {{(`WIDTH - 14){1'b0}}, program_counter_incremented} : data_stack_top;
@@ -80,17 +80,17 @@ module alu (
     // ({instruction} Why does it continue after each run?
     always @* begin
         casez (instruction[15:13])
-            3'b1??: {data_stack_write_enable, data_stack_position_incrementer} = {1'b1, 4'b0001};
-            3'b001: {data_stack_write_enable, data_stack_position_incrementer} = {1'b0, 4'b1111};
-            3'b011: {data_stack_write_enable, data_stack_position_incrementer} = {function_data_stack_write, {instruction[1], instruction[1], instruction[1:0]}};
-            default: {data_stack_write_enable, data_stack_position_incrementer} = {1'b0, 4'b0000};
+            3'b1??: {data_stack_write_enable, data_stack_position_incrementer} = {1'b1, {{(`DEPTH - 1){1'b0}}, 1'b1 }};
+            3'b001: {data_stack_write_enable, data_stack_position_incrementer} = {1'b0, {{(`DEPTH){1'b1}}}};
+            3'b011: {data_stack_write_enable, data_stack_position_incrementer} = {function_data_stack_write, { {(`DEPTH - 2){instruction[1]}}, instruction[1:0] }};
+            default: {data_stack_write_enable, data_stack_position_incrementer} = {1'b0, {{(`DEPTH){1'b0}}}};
         endcase
         data_stack_pointer_second <= data_stack_pointer_top + data_stack_position_incrementer;
 
         casez (instruction[15:13])
-            3'b010: {return_stack_write_enable, return_stack_position_incrementer} = {1'b1, 4'b0001};
-            3'b011: {return_stack_write_enable, return_stack_position_incrementer} = {function_return_stack_write, {instruction[3], instruction[3], instruction[3:2]}};
-            default: {return_stack_write_enable, return_stack_position_incrementer} = {1'b0, 4'b0000};
+            3'b010: {return_stack_write_enable, return_stack_position_incrementer} = {1'b1, {{(`DEPTH - 1){1'b0}}, 1'b1 }};
+            3'b011: {return_stack_write_enable, return_stack_position_incrementer} = {function_return_stack_write, { {(`DEPTH - 2){instruction[3]}}, instruction[3:2] }};
+            default: {return_stack_write_enable, return_stack_position_incrementer} = {1'b0, {{(`DEPTH){1'b0}}}};
         endcase
         return_stack_pointer_second <= return_stack_pointer_top + return_stack_position_incrementer;
         
