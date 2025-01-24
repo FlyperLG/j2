@@ -71,13 +71,14 @@ module alu (
     assign data_out = data_stack_second;
 
     // Probably all need `DEPTH-1 instead of 2
-    reg [2:0] data_stack_position_incrementer;
-    reg [2:0] return_stack_position_incrementer;
+    reg [3:0] data_stack_position_incrementer;
+    reg [3:0] return_stack_position_incrementer;
     reg [12:0] program_counter_incremented = program_counter + 1;
 
     assign return_stack_second = (instruction[13] == 1'b0) ? {{(`WIDTH - 14){1'b0}}, program_counter_incremented} : data_stack_top;
 
-    always @({instruction}) begin
+    // ({instruction} Why does it continue after each run?
+    always @* begin
         casez (instruction[15:13])
             3'b1??: {data_stack_write_enable, data_stack_position_incrementer} = {1'b1, 4'b0001};
             3'b001: {data_stack_write_enable, data_stack_position_incrementer} = {1'b0, 4'b1111};

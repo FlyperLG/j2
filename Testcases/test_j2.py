@@ -315,7 +315,6 @@ async def testcase_data_stack(dut):
     """Test Data Stack"""
     await cocotb.start(generate_clock(dut))
 
-    dut.data_stack_write_enable.value = 1
     dut.data_stack_pointer_top.value = 0
     dut.data_stack_top.value = 49
     dut.instruction.value = 0b0110000000010001
@@ -333,7 +332,6 @@ async def testcase_return_stack(dut):
     """Test Return Stack"""
     await cocotb.start(generate_clock(dut))
 
-    dut.return_stack_write_enable.value = 1
     dut.return_stack_pointer_top.value = 0
     dut.instruction.value = 0b0110000000100100
 
