@@ -16,8 +16,8 @@ reg [`WIDTH-1:0] memory_storage[0:(2**DEPTH)-1];
 // Write operation:
 always @(posedge clock)
     if (write_enable)
-        memory_storage[write_address] <= write_data
+        memory_storage[write_address] <= write_data;
 
 // Read operation
-assign read_data = memory_storage[read_address]
+assign read_data = memory_storage[read_address];
 endmodule
