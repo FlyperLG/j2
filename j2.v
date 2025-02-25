@@ -19,18 +19,19 @@ module j2(
 
 reg is_reboot = 1;
 
-reg [12:0] program_counter, program_counter_next;
+reg [12:0] program_counter;
+wire [12:0] program_counter_next;
 assign instruction_address = {program_counter_next};
 
 // Data stack
 reg [`DEPTH-1:0] data_stack_pointer_top;
 reg [`WIDTH-1:0] data_stack_top;
-reg data_stack_write_enable;
-reg [`DEPTH-1:0] data_stack_pointer_second;
-reg [`WIDTH-1:0] data_stack_second;
+wire data_stack_write_enable;
+wire [`DEPTH-1:0] data_stack_pointer_second;
+wire [`WIDTH-1:0] data_stack_second;
 stack #(.DEPTH(`DEPTH)) data_stack (
     .clock(clock),
-    .active_low_reset(active_low_reset),
+    //.active_low_reset(active_low_reset),
     .read_address(data_stack_pointer_top),
     .read_data(data_stack_second),
     .write_enable(data_stack_write_enable),
@@ -41,12 +42,12 @@ stack #(.DEPTH(`DEPTH)) data_stack (
 // Return stack
 reg [`DEPTH-1:0] return_stack_pointer_top;
 wire [`WIDTH-1:0] return_stack_top;
-reg return_stack_write_enable;
-reg [`DEPTH-1:0] return_stack_pointer_second;
+wire return_stack_write_enable;
+wire [`DEPTH-1:0] return_stack_pointer_second;
 wire [`WIDTH-1:0] return_stack_second;
 stack #(.DEPTH(`DEPTH)) return_stack (
     .clock(clock),
-    .active_low_reset(active_low_reset),
+    //.active_low_reset(active_low_reset),
     .read_address(return_stack_pointer_top),
     .read_data(return_stack_top),
     .write_enable(return_stack_write_enable),
@@ -54,7 +55,7 @@ stack #(.DEPTH(`DEPTH)) return_stack (
     .write_data(return_stack_second)
 );
 
-reg [`WIDTH-1:0] data_stack_next_top;
+wire [`WIDTH-1:0] data_stack_next_top; // Changed from reg to wire
 assign memory_address = data_stack_next_top[15:0];
 alu alu1 (
     // Input
@@ -72,10 +73,9 @@ alu alu1 (
     .is_reboot(is_reboot),
     .program_counter(program_counter),
 
-
     // Output
     .program_counter_next(program_counter_next),
-    .data_stack_next_top(data_stack_next_top),
+    .data_stack_next_top(data_stack_next_top), // Now connected to a wire
     .data_stack_pointer_second(data_stack_pointer_second),
     .data_stack_write_enable(data_stack_write_enable),
     
