@@ -2,7 +2,7 @@
 module stack #(parameter DEPTH = 4)
 (
     input wire clock,
-    input wire active_low_reset,
+    //input wire active_low_reset,
     input wire [DEPTH-1:0] read_address,
     output wire [`WIDTH-1:0] read_data,
     input wire write_enable,
