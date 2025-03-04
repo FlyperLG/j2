@@ -89,7 +89,7 @@ endmodule
 module rxuart(
    input wire clk,
    input wire resetq,
-   input wire [31:0] baud,
+   input wire [30:0] baud,
    input wire uart_rx,      // UART recv wire
    input wire rd,           // read strobe
    output wire valid,       // has data 
@@ -103,7 +103,7 @@ module rxuart(
 
   wire idle = &bitcount;
   wire sample;
-  reg [2:0] hh = 3'b111;
+  reg [1:0] hh = 2'b11;
   wire [2:0] hhN = {hh[1:0], uart_rx};
   wire startbit = idle & (hhN[2:1] == 2'b10);
   wire [7:0] shifterN = sample ? {hh[1], shifter[7:1]} : shifter;
@@ -164,7 +164,7 @@ module buart(
   rxuart #(.CLKFREQ(CLKFREQ)) _rx (
      .clk(clk),
      .resetq(resetq),
-     .baud(baud),
+     .baud(baud[30:0]),
      .uart_rx(rx),
      .rd(rd),
      .valid(valid),

@@ -9,32 +9,30 @@ module j2_top(
     output wire TXD,
     
     // Led outputs
-    output reg led01,
-    output reg led02,
-    output reg led03,
-    output reg led04,
-    output reg led05,
-    output reg led06,
-    output reg led07,
-    output reg led08,
-    output reg led09,
-    output reg led10,
-    output reg led11,
-    output reg led12,
-    output reg led13,
-    output reg led14,
-    output reg led15,
-    output reg led16
+    output wire led00,
+    output wire led01,
+    output wire led02,
+    output wire led03,
+    output wire led04,
+    output wire led05,
+    output wire led06,
+    output wire led07,
+    output wire led08,
+    output wire led09,
+    output wire led10,
+    output wire led11,
+    output wire led12,
+    output wire led13,
+    output wire led14,
+    output wire led15
 );
-    localparam MHZ = 40;
-    wire fclk;
+    localparam MHZ = 100;
 
     wire [15:0] instruction;
     wire [12:0] instruction_address;
     wire [`WIDTH-1:0] memory_data_in;
     wire [15:0] memory_address;
 
-    wire [`WIDTH-1:0] io_data_in;
     wire memory_write_enable;
     wire io_write_enable;
     wire [`WIDTH-1:0] data_out;
@@ -43,30 +41,30 @@ module j2_top(
     //    .clock(clock)
     //);
     
-    always @(posedge clock) begin
-        if(io_write_enable) begin
-            case (data_out[8:0])
-                8'b0000_0001: led01 <= 1'b1;
-                8'b0000_0010: led02 <= 1'b1;
-                8'b0000_0011: led03 <= 1'b1;
-                8'b0000_0100: led04 <= 1'b1;
-                8'b0000_0101: led05 <= 1'b1;
-                8'b0000_0110: led06 <= 1'b1;
-                8'b0000_0111: led07 <= 1'b1;
-                8'b0000_1000: led08 <= 1'b1;
-                8'b0000_1001: led09 <= 1'b1;
-                8'b0000_1010: led10 <= 1'b1;
-                8'b0000_1011: led11 <= 1'b1;
-                8'b0000_1100: led12 <= 1'b1;
-                8'b0000_1101: led13 <= 1'b1;
-                8'b0000_1110: led14 <= 1'b1;
-                8'b0000_1111: led15 <= 1'b1;
-                8'b0001_0000: led16 <= 1'b1;
-            endcase
-        end
+    io_manager io (
+        .clock(clock),
+        .active_low_reset(active_low_reset),
+        .io_write_enable(io_write_enable),
+        .memory_address(memory_address),
+        .data(data_out),
         
-        led03 <= 1'b1;
-    end
+        .led00(led00),
+        .led01(led01),
+        .led02(led02),
+        .led03(led03),
+        .led04(led04),
+        .led05(led05),
+        .led06(led06),
+        .led07(led07),
+        .led08(led08),
+        .led09(led09),
+        .led10(led10),
+        .led11(led11),
+        .led12(led12),
+        .led13(led13),
+        .led14(led14),
+        .led15(led15)
+    );
 
     j2 j2_core (
         .clock(clock),
@@ -78,7 +76,7 @@ module j2_top(
         .memory_data_in(memory_data_in),
         .memory_write_enable(memory_write_enable),
         .memory_address(memory_address),
-        .io_data_in(io_data_in),
+        .io_data_in({17'd0, uart0_data, 4'd0, 1'd0, 1'd0, 1'd0}),
         .io_write_enable(io_write_enable),
         .data_out(data_out)
     );
@@ -86,11 +84,10 @@ module j2_top(
     wire uart0_valid, uart0_busy;
     wire [7:0] uart0_data;
     wire uart0_rd, uart0_wr;
-    reg [31:0] baud = 32'd115200;
-    wire UART0_RX;
+    reg [31:0] baud = 32'd9600;
     buart #(.CLKFREQ(MHZ * 1000000)) _uart0 (
-       .clk(fclk),
-       .resetq(1'b1),
+       .clk(clock),
+       .resetq(active_low_reset),
        .baud(baud),
        .rx(RXD),
        .tx(TXD),
@@ -98,18 +95,21 @@ module j2_top(
        .wr(uart0_wr),
        .valid(uart0_valid),
        .busy(uart0_busy),
-       .tx_data(data_out[7:0]),
+       .tx_data(dout_[7:0]),
        .rx_data(uart0_data)
     );
     
     reg io_wr_;
     reg [15:0] mem_addr_;
-    reg [31:0] dout_;
-    always @(posedge fclk)
-        {io_wr_, mem_addr_, dout_} <= {io_write_enable, memory_address, data_out};
+    reg [7:0] dout_;
+    always @(posedge clock) begin
+        io_wr_ <= io_write_enable;
+        mem_addr_ <= memory_address;
+        dout_ <= data_out;
+    end
     
-    assign uart0_wr = io_wr_ & (mem_addr_ == 16'h0000);
-    assign uart0_rd = io_wr_ & (mem_addr_ == 16'h0002);
+    assign uart0_wr = io_wr_ & (mem_addr_ == 16'h00F0);
+    assign uart0_rd = io_wr_ & (mem_addr_ == 16'h00F1);
 
     
     // multiplexer - case block , wann in ram schreiben pder wann 
