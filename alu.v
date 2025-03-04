@@ -97,11 +97,11 @@ module alu (
         endcase
         return_stack_pointer_second <= return_stack_pointer_top + return_stack_position_incrementer;
         
-        casez ({is_reboot, instruction[15:13], instruction[7], |data_stack_second})
+        casez ({is_reboot, instruction[15:13], instruction[7], |data_stack_top})
             6'b1_???_?_?: program_counter_next = 0;
             6'b0_000_?_?: program_counter_next = instruction[12:0];
             6'b0_010_?_?: program_counter_next = instruction[12:0];
-            6'b0_001_?_?: program_counter_next = instruction[12:0];
+            6'b0_001_?_0: program_counter_next = instruction[12:0];
             6'b0_011_1_?: program_counter_next = return_stack_top[13:1];
             default: program_counter_next = program_counter_incremented;
         endcase
